@@ -1470,23 +1470,34 @@ static void DrawF(uint32_t f) {
         line2[0] = '\0';
     }
 
-    // line3 — таймер и WaitSpectrum (безопасно, без переполнения)
+    // line3 — логика ровно по твоему описанию
     line3[0] = '\0';
     int pos = 0;
-        
-    if (WaitSpectrum > 0 && WaitSpectrum < 61000) {
-        pos += sprintf(&line3[pos], "End %d ", WaitSpectrum / 1000);
-    } else if (WaitSpectrum > 61000) {
-        pos += sprintf(&line3[pos], "End OO ");
-        }
 
- //if (isListening) { //RX ПОКАЗ
-        if (MaxListenTime) {
-            pos += sprintf(&line3[pos], "Max %d/%s", spectrumElapsedCount / 1000, labels[IndexMaxLT]);
+    // 1. Если есть MaxListenTime → показываем только его + End (если есть)
+    if (MaxListenTime > 0) {
+        pos += sprintf(&line3[pos], "RX%d|%s", spectrumElapsedCount / 1000, labels[IndexMaxLT]);
+        
+        if (WaitSpectrum > 0) {
+            if (WaitSpectrum < 61000) {
+                pos += sprintf(&line3[pos], "%d", WaitSpectrum / 1000);
             } else {
-            pos += sprintf(&line3[pos], "Rx %d ", spectrumElapsedCount / 1000);
+                pos += sprintf(&line3[pos], "End OO");
             }
-   //   }
+        }
+    }
+    // 2. Если MaxListenTime НЕ установлен → показываем Rx + End (если есть)
+    else {
+        pos += sprintf(&line3[pos], "Rx%d", spectrumElapsedCount / 1000);
+        
+        if (WaitSpectrum > 0) {
+            if (WaitSpectrum < 61000) {
+                pos += sprintf(&line3[pos], "%d", WaitSpectrum / 1000);
+            } else {
+                pos += sprintf(&line3[pos], "End OO");
+            }
+        }
+    }
     
    
     
@@ -1497,8 +1508,8 @@ static void DrawF(uint32_t f) {
             if (ShowLines == 2) {
                 UI_DisplayFrequency(line1, 10, 0, 0);  // BIG FREQUENCY
                 GUI_DisplaySmallestDark(StringCode, 70, 17, false, false);  // CSS субтон
-                GUI_DisplaySmallestDark(line2,      16, 17, false, false);  // имя канала / бэнд / список
-                GUI_DisplaySmallestDark	(">", 7, 17, false, false);
+                GUI_DisplaySmallestDark(line2,      18, 17, false, true);  // имя канала / бэнд / список
+                GUI_DisplaySmallestDark	(">", 8, 17, false, false);
                 GUI_DisplaySmallestDark	("<", 118, 17, false, false);   
                 ArrowLine = 3;
             }
@@ -1506,8 +1517,8 @@ static void DrawF(uint32_t f) {
             if (ShowLines == 1) {
                 UI_PrintStringBSmall(line1b, 1, LCD_WIDTH - 1, 0, 0);  // F + CSS
                 UI_PrintStringSmall(line2,  1, LCD_WIDTH - 1, 1, 0);  // SL or BD + Name
-                GUI_DisplaySmallestDark(line3, 16,17, false, false);  // таймеры
-                GUI_DisplaySmallestDark	(">", 7, 17, false, false);
+                GUI_DisplaySmallestDark(line3, 18,17, false, true);  // таймеры
+                GUI_DisplaySmallestDark	(">", 8, 17, false, false);
                 GUI_DisplaySmallestDark	("<", 118, 17, false, false);   
                 ArrowLine = 3;
             }
@@ -1537,14 +1548,12 @@ static void DrawF(uint32_t f) {
     UI_PrintString(line2, 5, LCD_WIDTH - 1, 5, 8); // имя список
     GUI_DisplaySmallestDark(">",     2, 22, false, false);
     GUI_DisplaySmallestDark("<", 123, 22, false, false);  
-    UI_PrintStringBSmall(line3,  1, 0, 0, 0);  //таймер 
-    // UI_PrintStringBSmall(line2,  15, LCD_WIDTH - 1, 6, 0);  //имя список
-    //GUI_DisplaySmallestDark("CHECKMATE SU 75 SPECTRUM", 15, 9, false, false); 
-    
+    UI_PrintStringSmall(line3,  0, 0, 0, 0);  //таймер 
+
     // RSSI числом — точно как в истории (маленький шрифт, справа вверху)
     char rssiText[16];
     sprintf(rssiText, "R:%3d", scanInfo.rssi);
-    UI_PrintStringBSmall(rssiText, 96, 1, 0, 0);  // x=96, y=0, BSmall
+    UI_PrintStringSmall(rssiText, 96, 1, 0, 0);  // x=96, y=0, BSmall
 
     // Субтон отдельно, правее RSSI, тот же шрифт, та же строка y=0
     if (StringCode[0]) {
@@ -3493,9 +3502,9 @@ static void GetParametersText(uint16_t index, char *buffer) {
 //***********бэнды список */
 static void GetBandItemText(uint16_t index, char* buffer) {
     if (settings.bandEnabled[index]) {
-        sprintf(buffer, "> %d:%-11s", index + 1, BParams[index].BandName);
+        sprintf(buffer, "> %d: %-11s", index + 1, BParams[index].BandName);
     } else {
-        sprintf(buffer, " %d:%-11s", index + 1, BParams[index].BandName);
+        sprintf(buffer, " %d: %-11s", index + 1, BParams[index].BandName);
     }
 }
 
@@ -3786,12 +3795,12 @@ static void RenderScanListChannelsDoubleLines(const char* title, uint8_t numItem
         
         char nameText[20], freqText[20];
         if (itemIndex == selectedIndex) { // списки заголовок
-            sprintf(nameText, "%3d: %s", channelIndex + 1, channel_name);
+            sprintf(nameText, "%3d :%s", channelIndex + 1, channel_name);
             sprintf(freqText, "    %s", freqStr);
             UI_PrintStringSmall(nameText, 1, 0, line1,1);//*
             UI_PrintStringSmall(freqText, 1, 0, line2,1);//*
         } else {
-            sprintf(nameText, "%3d: %s", channelIndex + 1, channel_name);
+            sprintf(nameText, "%3d :%s", channelIndex + 1, channel_name);
             sprintf(freqText, "    %s", freqStr);
             UI_PrintStringSmall(nameText, 1, 0, line1,0);
             UI_PrintStringSmall(freqText, 1, 0, line2,0);

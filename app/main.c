@@ -231,6 +231,12 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 					ACTION_Power();
 					gRequestSaveChannel = 1;
 					RADIO_SetupRegisters(true);
+
+					/*case KEY_7:
+					// Длинное 7 – toggle фонарик при RX
+					gFlashlightOnRx = !gFlashlightOnRx;
+					gRequestSaveSettings = true;
+					break;*/
 					
 					break;
 				case KEY_0:
@@ -323,12 +329,12 @@ if (IS_MR_CHANNEL(gTxVfo->CHANNEL_SAVE)) {
         RADIO_SetupRegisters(true);       // включает приём на новом канале
 		BK4819_RX_TurnOn();
         }
+		
         gInputBoxIndex = 0;
         gMRInputTimer = 0;
     }
 
-   gRequestDisplayScreen = DISPLAY_MAIN;
-		return;
+   
 }
 
 		if (IS_FREQ_CHANNEL(gTxVfo->CHANNEL_SAVE))

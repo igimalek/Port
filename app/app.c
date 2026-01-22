@@ -717,52 +717,47 @@ void APP_TimeSlice10ms(void)
 	}
 	SCANNER_TimeSlice10ms();
 	CheckKeys();
-	if (gMRInputTimer > 0) {
-        gMRInputTimer--;
-        if (gMRInputTimer == 0 && gInputBoxIndex > 0 && IS_MR_CHANNEL(gTxVfo->CHANNEL_SAVE)) {
-            uint16_t Channel = 0;
+if (gMRInputTimer > 0) {
+    gMRInputTimer--;
+    if (gMRInputTimer == 0 && gInputBoxIndex > 0 && IS_MR_CHANNEL(gEeprom.ScreenChannel)) {
+        uint16_t Channel = 0;
 
-            // Парсим с ведущими нулями (как будто ввели 078/003)
-            if (gInputBoxIndex == 1) {
-                Channel = gInputBox[0];                  // 3 → 3
-            } else if (gInputBoxIndex == 2) {
-                Channel = gInputBox[0] * 10 + gInputBox[1];  // 78 → 78
-            } else if (gInputBoxIndex == 3) {
-                Channel = gInputBox[0] * 100 + gInputBox[1] * 10 + gInputBox[2];
-            }
+        if (gInputBoxIndex == 1) {
+            Channel = gInputBox[0];
+        } else if (gInputBoxIndex == 2) {
+            Channel = gInputBox[0] * 10 + gInputBox[1];
+        } else if (gInputBoxIndex == 3) {
+            Channel = gInputBox[0] * 100 + gInputBox[1] * 10 + gInputBox[2];
+        }
 
-            Channel -= 1;  // как в твоём коде для 3 цифр (каналы 0-199?)
+        Channel -= 1;
 
-            if (RADIO_CheckValidChannel(Channel, false, 0)) {
-                gEeprom.MrChannel     = Channel;
-                gEeprom.ScreenChannel = Channel;
-                gRequestSaveVFO       = true;
-                gVfoConfigureMode     = VFO_CONFIGURE_RELOAD;
-                gTxVfo->CHANNEL_SAVE  = Channel;
+        if (RADIO_CheckValidChannel(Channel, false, 0)) {
+            gEeprom.MrChannel     = Channel;
+            gEeprom.ScreenChannel = Channel;
+            gTxVfo->CHANNEL_SAVE  = Channel;
 
-                RADIO_SelectVfos();
-                RADIO_ConfigureChannel(0);
-                RADIO_SetupRegisters(true);
-                BK4819_RX_TurnOn();
-				
-			
-				// ← Тест: мигание фонарика 5 раз (визуальный признак)
-        for (int i = 0; i <1; i++) {
+            gRequestSaveVFO       = true;
+            gVfoConfigureMode     = VFO_CONFIGURE_RELOAD;
+// ← Добавь это: принудительная реконфигурация VFO сразу
+    RADIO_ConfigureChannel(gVfoConfigureMode);   // применяет настройки канала
+    gFlagReconfigureVfos  = true;                // флаг для полной перезагрузки
+
+            RADIO_SelectVfos();
+            RADIO_SetupRegisters(true);
+            BK4819_RX_TurnOn();
+
+            /*/ фонарик тест (оставь)
+			 for (int i = 0; i <1; i++) {
             GPIO_SetBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
             SYSTEM_DelayMs(50);
             GPIO_ClearBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
             SYSTEM_DelayMs(50);
+        }*/
+
+            gRequestDisplayScreen = DISPLAY_MAIN;  // если экран не обновляется
         }
-		/*/ Тест: мигаем подсветкой 5 раз (быстро, чтобы было видно)
-            for (int i = 0; i < 3; i++) {
-                BACKLIGHT_TurnOn();
-                SYSTEM_DelayMs(100);
-                BACKLIGHT_TurnOff();
-                SYSTEM_DelayMs(100);
-            }*/
-			
-        }
-		
+
         gInputBoxIndex = 0;
         gMRInputTimer = 0;
     }

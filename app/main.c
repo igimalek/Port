@@ -153,7 +153,7 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 					if (!IS_FREQ_CHANNEL(gTxVfo->CHANNEL_SAVE)) {
 						gWasFKeyPressed = false;
 
-#ifdef ENABLE_COPY_CHAN_TO_VFO
+						#ifdef ENABLE_COPY_CHAN_TO_VFO
 						if (gEeprom.VFO_OPEN && !gCssBackgroundScan)
 						{
 							if (IS_MR_CHANNEL(gEeprom.ScreenChannel))
@@ -173,7 +173,7 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 							}
 						}
 						
-#endif
+						#endif
 						return;
 					}
 

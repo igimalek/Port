@@ -231,14 +231,25 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 					ACTION_Power();
 					gRequestSaveChannel = 1;
 					RADIO_SetupRegisters(true);
-
-					/*case KEY_7:
-					// Длинное 7 – toggle фонарик при RX
-					gFlashlightOnRx = !gFlashlightOnRx;
-					gRequestSaveSettings = true;
-					break;*/
-					
 					break;
+
+
+					case KEY_7:
+    if (bKeyHeld && bKeyPressed) // Если зажали 7
+    {
+        gEeprom.FlashlightOnRX = !gEeprom.FlashlightOnRX; // Меняем: ВКЛ -> ВЫКЛ / ВЫКЛ -> ВКЛ фонарик
+        
+        // Даем звуковой сигнал, чтобы ты понял, что функция переключилась
+        gRequestSaveSettings = true; 
+        gRequestDisplayScreen = DISPLAY_MAIN;
+        
+        // Сбрасываем флаги
+        bKeyPressed = false;
+        gWasFKeyPressed = false;
+    }
+    break;
+					
+					
 				case KEY_0:
 					// Длинное 0 — смена демодуляции
 					ACTION_SwitchDemodul();

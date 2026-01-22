@@ -287,15 +287,15 @@ void APP_StartListening(FUNCTION_Type_t Function)
 	const unsigned int chan = 0;
 
 	//*******************фонарик при входящем */
-if (Function == FUNCTION_RECEIVE || Function == FUNCTION_INCOMING)
-    {
-        for (int i = 0; i < 6; i++) {
-            GPIO_SetBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
-            SYSTEM_DelayMs(30);
-            GPIO_ClearBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
-            SYSTEM_DelayMs(30);
-        }
+if (gEeprom.FlashlightOnRX && (Function == FUNCTION_RECEIVE || Function == FUNCTION_INCOMING))
+{
+    for (int i = 0; i < 2; i++) {
+        GPIO_SetBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
+        SYSTEM_DelayMs(50);
+        GPIO_ClearBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
+        SYSTEM_DelayMs(50);
     }
+}
 	
 	if (gFmRadioMode)
 		BK1080_Init(0, false);

@@ -163,6 +163,7 @@ typedef struct {
 	BATTERY_Type_t		  BATTERY_TYPE;
 	uint32_t              RX_OFFSET;
 	uint16_t              SQL_TONE;
+	bool FlashlightOnRX;//фонарь
 } EEPROM_Config_t;
 
 extern EEPROM_Config_t gEeprom;

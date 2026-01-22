@@ -1404,13 +1404,13 @@ static void UpdateCssDetection(void) {
     if (scanResult == BK4819_CSS_RESULT_CDCSS) {
         uint8_t code = DCS_GetCdcssCode(cdcssFreq);
         if (code != 0xFF) {
-            snprintf(StringCode, sizeof(StringCode), "D%03oN", DCS_Options[code]);
+            snprintf(StringCode, sizeof(StringCode), "D%03oN", DCS_Options[code]); //субтон цифра
             return;
         }
     } else if (scanResult == BK4819_CSS_RESULT_CTCSS) {
         uint8_t code = DCS_GetCtcssCode(ctcssFreq);
         if (code < ARRAY_SIZE(CTCSS_Options)) {
-            snprintf(StringCode, sizeof(StringCode), "%u.%uHz",
+            snprintf(StringCode, sizeof(StringCode), "%u.%u", // субтон аналог Hz
                      CTCSS_Options[code] / 10, CTCSS_Options[code] % 10);
             return;
         }
@@ -1488,7 +1488,7 @@ static void DrawF(uint32_t f) {
     }
     // 2. Если MaxListenTime НЕ установлен → показываем Rx + End (если есть)
     else {
-        pos += sprintf(&line3[pos], "Rx%d", spectrumElapsedCount / 1000);
+        pos += sprintf(&line3[pos], "RX%d", spectrumElapsedCount / 1000);
         
         if (WaitSpectrum > 0) {
             if (WaitSpectrum < 61000) {
@@ -1507,7 +1507,7 @@ static void DrawF(uint32_t f) {
 
             if (ShowLines == 2) {
                 UI_DisplayFrequency(line1, 10, 0, 0);  // BIG FREQUENCY
-                GUI_DisplaySmallestDark(StringCode, 70, 17, false, false);  // CSS субтон
+                GUI_DisplaySmallestDark(StringCode, 80, 17, false, false);  // CSS субтон
                 GUI_DisplaySmallestDark(line2,      18, 17, false, true);  // имя канала / бэнд / список
                 GUI_DisplaySmallestDark	(">", 8, 17, false, false);
                 GUI_DisplaySmallestDark	("<", 118, 17, false, false);   
@@ -1557,7 +1557,7 @@ static void DrawF(uint32_t f) {
 
     // Субтон отдельно, правее RSSI, тот же шрифт, та же строка y=0
     if (StringCode[0]) {
-        UI_PrintStringBSmall(StringCode, 56, 1, 0, 0);  // ← подбери 100–110
+        UI_PrintStringBSmall(StringCode, 50, 1, 0, 0);  // ← подбери 100–110
     }
 }
 }

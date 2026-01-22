@@ -226,8 +226,8 @@ void DisplayRSSIBar(const int16_t rssi)
     // S-meter
     if (smeterStr[0] != '\0')
     {
-        uint8_t y_mr = 2; uint8_t x_mr = 54;
-        uint8_t y_vfo = 2; uint8_t x_vfo = 54;
+        uint8_t y_mr = 2; uint8_t x_mr = 58;
+        uint8_t y_vfo = 2; uint8_t x_vfo = 58;
 
         uint8_t y = IS_MR_CHANNEL(gEeprom.ScreenChannel) ? y_mr : y_vfo;
         uint8_t x = IS_MR_CHANNEL(gEeprom.ScreenChannel) ? x_mr : x_vfo;
@@ -584,7 +584,7 @@ unsigned int state = VfoState;
 
 if (state != VFO_STATE_NORMAL)
 {
-    const char *state_list[] = {"", "BUSY", "BAT LOW", "TX DISABLE", "TIMEOUT", "ALARM", "VOLT HIGH"};
+    const char *state_list[] = {"", "BAT LOW", "TX DISABLE", "TIMEOUT", "ALARM", "VOLT HIGH"};
     if (state < ARRAY_SIZE(state_list))
     {
         const char *msg = state_list[state];

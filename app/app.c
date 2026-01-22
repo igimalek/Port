@@ -705,6 +705,49 @@ void APP_TimeSlice10ms(void)
 	}
 	SCANNER_TimeSlice10ms();
 	CheckKeys();
+	if (gMRInputTimer > 0 && gInputBoxIndex > 0 && gInputBoxIndex < 3) {
+    gMRInputTimer--;
+    if (gMRInputTimer == 0) {
+        uint16_t Channel = 0;
+        if (gInputBoxIndex == 1) {
+            Channel = gInputBox[0] - 1;
+        } else if (gInputBoxIndex == 2) {
+            Channel = (gInputBox[0] * 10 + gInputBox[1]) - 1;
+        }
+        if (RADIO_CheckValidChannel(Channel, false, 0)) {
+            gEeprom.MrChannel = Channel;
+            gEeprom.ScreenChannel = Channel;
+            gRequestSaveVFO = true;
+            gVfoConfigureMode = VFO_CONFIGURE_RELOAD;
+			// Немедленное применение канала — вот чего не хватало
+				//gTxVfo->CHANNEL_SAVE = Channel;
+				RADIO_SelectVfos();
+				gTxVfo->CHANNEL_SAVE = Channel;
+				RADIO_ConfigureChannel(0);
+				RADIO_SetupRegisters(true);
+				BK4819_RX_TurnOn();
+			
+				// ← Тест: мигание фонарика 5 раз (визуальный признак)
+       /* for (int i = 0; i < 5; i++) {
+            GPIO_SetBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
+            SYSTEM_DelayMs(100);
+            GPIO_ClearBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
+            SYSTEM_DelayMs(100);
+        }*/
+		// Тест: мигаем подсветкой 5 раз (быстро, чтобы было видно)
+            for (int i = 0; i < 3; i++) {
+                BACKLIGHT_TurnOn();
+                SYSTEM_DelayMs(100);
+                BACKLIGHT_TurnOff();
+                SYSTEM_DelayMs(100);
+            }
+			
+        }
+		
+        gInputBoxIndex = 0;
+        gMRInputTimer = 0;
+    }
+}
 }
 
 void cancelUserInputModes(void)

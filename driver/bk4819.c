@@ -30,9 +30,6 @@
 //#include "debugging.h"
 #include "app/spectrum.h"
 
-
-
-
 #ifndef ARRAY_SIZE
 	#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 #endif
@@ -69,16 +66,6 @@ __inline uint16_t scale_freq(const uint16_t freq)
 {
 //	return (((uint32_t)freq * 1032444u) + 50000u) / 100000u;   // with rounding
 	return (((uint32_t)freq * 1353245u) + (1u << 16)) >> 17;   // with rounding
-}
-
-
-void BK4819_SetSatcomMode(bool enable)
-{
-    if (enable) {
-        BK4819_WriteRegister(BK4819_REG_4F, 0xA009);  // +9 dB LNA gain (IJV/egzumer)
-    } else {
-        BK4819_WriteRegister(BK4819_REG_4F, 0xA000);  // default gain сатком
-    }
 }
 
 void BK4819_Init(void)

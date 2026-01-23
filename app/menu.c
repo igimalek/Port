@@ -1044,13 +1044,6 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
 		{
 			gFlagAcceptSetting = true;
 			gIsInSubMenu       = false;
-//******************сатком */
-			if (UI_MENU_GetCurrentMenuId() == MENU_SATCOM) {
-				gEeprom.SATCOM_ENABLE = !gEeprom.SATCOM_ENABLE;
-				BK4819_SetSatcomMode(gEeprom.SATCOM_ENABLE);
-				SETTINGS_SaveSettings();
-				gFlagRefreshSetting = true;
-			}
 		}
 	}
 	gInputBoxIndex = 0;

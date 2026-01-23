@@ -533,13 +533,6 @@ void RADIO_SetupRegisters(bool switchToForeground)
     (62u <<  4) |     // AF Rx Gain-2 = Max
     (12u <<  0));     // AF DAC Gain = 12 (loud and clear)
 	BK4819_InitAGC(gTxVfo->Modulation);
-	//BK4819_SetSatcomMode(gEeprom.SATCOM_ENABLE); // сатком везде
-	// SATCOM авто-режим: усиление только на 240–280 MHz
-if (gEeprom.SATCOM_ENABLE && gTxVfo->pRX->Frequency >= 240000000 && gTxVfo->pRX->Frequency <= 280000000) {
-    BK4819_WriteRegister(BK4819_REG_4F, 0xA009);  // +9 dB LNA gain
-} else {
-    BK4819_WriteRegister(BK4819_REG_4F, 0xA000);  // default gain без усиления
-}
 	
 	uint16_t InterruptMask = BK4819_REG_3F_SQUELCH_FOUND | BK4819_REG_3F_SQUELCH_LOST;
 

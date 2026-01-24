@@ -523,6 +523,110 @@ void RADIO_SetupRegisters(bool switchToForeground)
 
 	BK4819_PickRXFilterPathBasedOnFrequency(Frequency);
 
+
+	// --- SATCOM BOOST PATCH (IJV STYLE) ---
+	if (gEeprom.SATCOM_ENABLE && Frequency >= 24000000 && Frequency <= 38000000)
+{
+    // --- ПРИМЕНЯЕМ ПАТЧ (1 моргание) ---
+    GPIO_SetBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
+    SYSTEM_DelayMs(20); 
+    GPIO_ClearBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
+
+    // 1. Принудительный фильтр UHF (Band 3)
+    uint16_t reg44 = BK4819_ReadRegister(0x44);
+    reg44 = (reg44 & ~(7u << 13)) | (2u << 13); 
+    BK4819_WriteRegister(0x44, reg44);
+
+    // 2. LNA Gain Max (0xF)
+    uint16_t reg13 = BK4819_ReadRegister(0x13);
+    reg13 = (reg13 & ~(0xFu << 8)) | (0xFu << 8); 
+    BK4819_WriteRegister(0x13, reg13);
+    
+    // 3. Mixer Gain Max (3)
+    uint16_t reg10 = BK4819_ReadRegister(0x10);
+    reg10 = (reg10 & ~(3u << 3)) | (3u << 3);
+    BK4819_WriteRegister(0x10, reg10);
+
+    // 4. IF Gain Max + Снятие аттенюатора
+    uint16_t reg12 = BK4819_ReadRegister(0x12);
+    reg12 &= ~(1u << 6);    // Выключаем аттенюатор (бит 6 в 0)
+    reg12 |= 0x000F;       // IF Gain на максимум (биты 0-3)
+    BK4819_WriteRegister(0x12, reg12);
+} 
+else 
+{   
+    /*/ --- ВЫХОДИМ ИЗ ПАТЧА (2 моргания) ---
+    for(int i=0; i<2; i++) {
+        GPIO_SetBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
+        SYSTEM_DelayMs(20);
+        GPIO_ClearBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
+        if(i==0) SYSTEM_DelayMs(40); // пауза между моргами
+    }*/
+
+// Возвращаем аттенюатор в авто-режим (обычно это бит 6)
+    uint16_t r12 = BK4819_ReadRegister(0x12);
+    r12 &= ~(1u << 6); 
+    BK4819_WriteRegister(0x12, r12);
+
+    // Вызываем стандартную функцию подбора фильтров, 
+    // чтобы она «перекрыла» наш принудительный Band 3
+    BK4819_PickRXFilterPathBasedOnFrequency(Frequency);
+    
+    // Даем команду чипу пересчитать усиление (AGC Reset)
+    BK4819_WriteRegister(0x13, 0x0000); // Обычно сброс в 0 включает авто-режим
+}
+/*if (gEeprom.SATCOM_ENABLE && Frequency >= 24000000 && Frequency <= 38000000)
+{
+    // 1. Принудительный фильтр UHF (Band 3)
+    uint16_t reg44 = BK4819_ReadRegister(0x44);
+    reg44 &= ~(7u << 13);
+    reg44 |= (2u << 13); 
+    BK4819_WriteRegister(0x44, reg44);
+
+    // 2. LNA Gain Max (0xF = 15)
+    uint16_t reg13 = BK4819_ReadRegister(0x13);
+    reg13 &= ~(0xFu << 8);
+    reg13 |= (0xFu << 8); 
+    BK4819_WriteRegister(0x13, reg13);
+    
+    // 3. Mixer Gain Max (3 = Max) снизить 2u << 3
+    uint16_t reg10 = BK4819_ReadRegister(0x10);
+    reg10 &= ~(3u << 3);
+    reg10 |= (3u << 3);
+    BK4819_WriteRegister(0x10, reg10);
+
+    // Короткий миг фонариком (опционально, для контроля)
+    GPIO_SetBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
+    SYSTEM_DelayMs(20); 
+    GPIO_ClearBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
+
+	// Добавь это в блок SATCOM_ENABLE
+uint16_t reg12 = BK4819_ReadRegister(0x12);
+reg12 &= ~(1u << 6); // Снимаем аттенюатор (если был)
+BK4819_WriteRegister(0x12, reg12);
+} 
+else 
+{
+    // ВОЗВРАТ К ДЕФОЛТАМ (Очень важно!)
+    // По умолчанию для этого диапазона в kamilsss655/Tachyon:
+    
+    // Рег 0x13 (LNA) обычно стоит в AUTO или 0x8 (среднее)
+    uint16_t r13 = BK4819_ReadRegister(0x13);
+    r13 &= ~(0xFu << 8);
+    r13 |= (0x8u << 8); 
+    BK4819_WriteRegister(0x13, r13);
+
+    // Рег 0x10 (Mixer) обычно стоит 0x2
+    uint16_t r10 = BK4819_ReadRegister(0x10);
+    r10 &= ~(3u << 3);
+    r10 |= (2u << 3);
+    BK4819_WriteRegister(0x10, r10);
+}*/
+
+
+
+
+
 	// what does this in do ?
 	BK4819_ToggleGpioOut(BK4819_GPIO0_PIN28_RX_ENABLE, true);
 

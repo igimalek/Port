@@ -952,6 +952,24 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
 
 	if (!gIsInSubMenu)
 	{
+
+		if (UI_MENU_GetCurrentMenuId() == MENU_SATCOM) 
+{
+    // 1. Инвертируем флаг
+    gEeprom.SATCOM_ENABLE = !gEeprom.SATCOM_ENABLE;
+    
+    // 2. Сохраняем в EEPROM, чтобы после перезагрузки не слетело
+    SETTINGS_SaveSettings();
+    
+    // 3. ПИНЯЕМ ПРОЦЕССОР (Самое важное!)
+    gVfoConfigureMode = VFO_CONFIGURE_RELOAD;
+    gFlagResetVfos    = true; 
+    
+    // 4. Даем визуальный фидбек
+    gRequestDisplayScreen = DISPLAY_MENU; 
+    
+    return; 
+}
 		if (UI_MENU_GetCurrentMenuId() == MENU_DEL_CH || UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME)
 				if (!RADIO_CheckValidChannel(gSubMenuSelection, false,0))
 					return;  // invalid Channel

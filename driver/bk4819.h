@@ -167,6 +167,7 @@ void     BK4819_Enable_AfDac_DiscMode_TxDsp(void);
 	    
 void     BK4819_GetVoxAmp(uint16_t *pResult);
 void     BK4819_SetScrambleFrequencyControlWord(uint32_t Frequency);
+//void BK4819_SetSatcomMode(bool enable); //сатком
 
 #endif
 

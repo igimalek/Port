@@ -867,6 +867,50 @@ static void ToggleRX(bool on) {
     if (SPECTRUM_PAUSED) return;
     if(!on && SpectrumMonitor == 2) {isListening = 1;return;}
     isListening = on;
+
+// ────────────────────────────────────────────────
+    // SATCOM BOOST — вставляем здесь, в начале ToggleRX
+    // ────────────────────────────────────────────────
+    uint32_t Frequency = gCurrentVfo->pRX->Frequency;
+
+    if (gEeprom.SATCOM_ENABLE && Frequency >= 24000000 && Frequency <= 28000000)
+    {
+        // 2 моргания — для визуального подтверждения в спектре
+        for (int i = 0; i < 2; i++) {
+            GPIO_SetBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
+            SYSTEM_DelayMs(30);
+            GPIO_ClearBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
+            if (i == 0) SYSTEM_DelayMs(50);
+        }
+
+        // 1. Принудительный Band 3 (UHF high)
+        uint16_t reg44 = BK4819_ReadRegister(0x44);
+        reg44 = (reg44 & ~(7u << 13)) | (2u << 13);
+        BK4819_WriteRegister(0x44, reg44);
+
+        // 2. LNA Gain = Max (0xF)
+        uint16_t reg13 = BK4819_ReadRegister(0x13);
+        reg13 = (reg13 & ~(0xFu << 8)) | (0xFu << 8);
+        BK4819_WriteRegister(0x13, reg13);
+		
+
+        // 3. Mixer Gain = Max (3)
+        uint16_t reg10 = BK4819_ReadRegister(0x10);
+        reg10 = (reg10 & ~(3u << 3)) | (3u << 3);
+        BK4819_WriteRegister(0x10, reg10);
+
+        // 4. IF Gain Max + аттенюатор OFF
+        uint16_t reg12 = BK4819_ReadRegister(0x12);
+        reg12 &= ~(1u << 6);          // аттенюатор выкл
+        reg12 = (reg12 & 0xFFF0) | 0x000F;  // IF gain = 15
+        BK4819_WriteRegister(0x12, reg12);
+
+        // Дополнительно: отключить AGC (чтобы не сбросил gain)
+        BK4819_WriteRegister(0x13, reg13 & ~(1u << 15));  // AGC OFF (бит 15)
+
+    }
+
+
     if (on && isKnownChannel) {
         if(!gForceModulation) settings.modulationType = channelModulation;
         BK4819_InitAGCSpectrum(settings.modulationType);
@@ -889,6 +933,24 @@ static void ToggleRX(bool on) {
     ToggleAudio(on);
     ToggleAFDAC(on);
     ToggleAFBit(on);
+
+    // Если выключаем RX — возвращаем дефолт (на всякий случай)
+    if (!on && gEeprom.SATCOM_ENABLE)
+    {
+        // Возврат к нормальному режиму (перезаписываем)
+        uint16_t reg13 = BK4819_ReadRegister(0x13);
+        reg13 = (reg13 & ~(0xFu << 8)) | (0x08u << 8);   // LNA средний
+        reg13 |= (1u << 15);                              // AGC ON
+        BK4819_WriteRegister(0x13, reg13);
+
+        uint16_t reg10 = BK4819_ReadRegister(0x10);
+        reg10 = (reg10 & ~(3u << 3)) | (0x02u << 3);     // Mixer дефолт
+        BK4819_WriteRegister(0x10, reg10);
+
+        uint16_t reg12 = BK4819_ReadRegister(0x12);
+        reg12 &= ~(1u << 6);                              // аттенюатор авто
+        BK4819_WriteRegister(0x12, reg12);
+    }
 }
 
 

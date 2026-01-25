@@ -239,7 +239,6 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
     {
         gEeprom.FlashlightOnRX = !gEeprom.FlashlightOnRX; // Меняем: ВКЛ -> ВЫКЛ / ВЫКЛ -> ВКЛ фонарик
         
-        // Даем звуковой сигнал, чтобы ты понял, что функция переключилась
         gRequestSaveSettings = true; 
         gRequestDisplayScreen = DISPLAY_MAIN;
         

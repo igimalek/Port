@@ -651,57 +651,67 @@ else
 	// ────────────────────────────────────────────────
     // SATCOM BOOST — ставим ПОСЛЕ всего остального!
     // ────────────────────────────────────────────────
-    if (gEeprom.SATCOM_ENABLE && Frequency >= 24000000 && Frequency <= 28000000)
-    {
-        // Моргание — 2 раза, чтобы отличать от дефолта
-        for (int i = 0; i < 1; i++) {
-            GPIO_SetBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
-            SYSTEM_DelayMs(10);
-            GPIO_ClearBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
-            if (i == 0) SYSTEM_DelayMs(50);
-        }
+    // --- SATCOM BOOST PATCH (RX gain + BW opt, 240–280 МГц) ---
+if (gEeprom.SATCOM_ENABLE && Frequency >= 24000000 && Frequency <= 28000000)
+{
+    // Моргание (1 раз) для теста
+    GPIO_SetBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
+    SYSTEM_DelayMs(20);
+    GPIO_ClearBit(&GPIOC->DATA, GPIOC_PIN_FLASHLIGHT);
 
-        // 1. Принудительный Band 3 (UHF high)
-        uint16_t reg44 = BK4819_ReadRegister(0x44);
-        reg44 = (reg44 & ~(7u << 13)) | (2u << 13);
-        BK4819_WriteRegister(0x44, reg44);
+    // 1. Band 3 (UHF high)
+    uint16_t reg44 = BK4819_ReadRegister(0x44);
+    reg44 = (reg44 & ~(7u << 13)) | (2u << 13); 
+    BK4819_WriteRegister(0x44, reg44);
 
-        // 2. LNA Gain = Max (0xF)
-        uint16_t reg13 = BK4819_ReadRegister(0x13);
-        reg13 = (reg13 & ~(0xFu << 8)) | (0xFu << 8);
-        BK4819_WriteRegister(0x13, reg13);
-		
+    // 2. LNA Max
+    uint16_t reg13 = BK4819_ReadRegister(0x13);
+    reg13 = (reg13 & ~(0xFu << 8)) | (0xFu << 8); 
+    BK4819_WriteRegister(0x13, reg13);
+    
+    // 3. Mixer Max
+    uint16_t reg10 = BK4819_ReadRegister(0x10);
+    reg10 = (reg10 & ~(3u << 3)) | (3u << 3);
+    BK4819_WriteRegister(0x10, reg10);
 
-        // 3. Mixer Gain = Max (3)
-        uint16_t reg10 = BK4819_ReadRegister(0x10);
-        reg10 = (reg10 & ~(3u << 3)) | (3u << 3);
-        BK4819_WriteRegister(0x10, reg10);
+    // 4. IF Max + аттенюатор OFF
+    uint16_t reg12 = BK4819_ReadRegister(0x12);
+    reg12 &= ~(1u << 6);    // OFF
+    reg12 = (reg12 & 0xFFF0) | 0x000F;  // IF = 15
+    BK4819_WriteRegister(0x12, reg12);
 
-        // 4. IF Gain Max + аттенюатор OFF
-        uint16_t reg12 = BK4819_ReadRegister(0x12);
-        reg12 &= ~(1u << 6);          // аттенюатор выкл
-        reg12 = (reg12 & 0xFFF0) | 0x000F;  // IF gain = 15
-        BK4819_WriteRegister(0x12, reg12);
+    // Fagci BW opt (2.5 kHz для чистоты)
+    uint16_t reg43 = BK4819_ReadRegister(0x43);
+    reg43 = (reg43 & ~(0b111 << 12)) | (0b010 << 12);  // RF BW = 2.5
+    reg43 = (reg43 & ~(0b111 << 9))  | (0b010 << 9);   // Weak BW = 2.5
+    reg43 = (reg43 & ~(0b11 << 4))   | (0b00 << 4);    // Wide mode
+    reg43 = (reg43 & ~(0b111 << 6))  | (0b010 << 6);   // AF LPF BW = 2.5
+    BK4819_WriteRegister(0x43, reg43);
 
-        // Дополнительно: отключить AGC (чтобы не сбросил gain)
-        BK4819_WriteRegister(0x13, reg13 & ~(1u << 15));  // AGC OFF (бит 15)
-    }
-    else
-    {
-        // Возврат к нормальному режиму (перезаписываем)
-        uint16_t reg13 = BK4819_ReadRegister(0x13);
-        reg13 = (reg13 & ~(0xFu << 8)) | (0x08u << 8);   // LNA средний
-        reg13 |= (1u << 15);                              // AGC ON
-        BK4819_WriteRegister(0x13, reg13);
+    // Стабилизация
+    SYSTEM_DelayMs(1);  // 1 мс (минимально)
+} 
+else 
+{
+    // Возврат к СТОК (не ослабляй!)
+    uint16_t reg13 = BK4819_ReadRegister(0x13);
+    reg13 = (reg13 & ~(0xFu << 8)) | (0x0Cu << 8);  // LNA сток = 12
+    reg13 |= (1u << 15);                            // AGC ON
+    BK4819_WriteRegister(0x13, reg13);
 
-        uint16_t reg10 = BK4819_ReadRegister(0x10);
-        reg10 = (reg10 & ~(3u << 3)) | (0x02u << 3);     // Mixer дефолт
-        BK4819_WriteRegister(0x10, reg10);
+    uint16_t reg10 = BK4819_ReadRegister(0x10);
+    reg10 = (reg10 & ~(3u << 3)) | (0x02u << 3);   // Mixer сток = 2
+    BK4819_WriteRegister(0x10, reg10);
 
-        uint16_t reg12 = BK4819_ReadRegister(0x12);
-        reg12 &= ~(1u << 6);                              // аттенюатор авто
-        BK4819_WriteRegister(0x12, reg12);
-    }
+    uint16_t reg12 = BK4819_ReadRegister(0x12);
+    reg12 |= (1u << 6);                             // аттенюатор ON (сток)
+    BK4819_WriteRegister(0x12, reg12);
+
+    // Fagci BW сток (wide или narrow по твоему bw)
+    BK4819_SetFilterBandwidth(gTxVfo->CHANNEL_BANDWIDTH, false);  // Восстанавливаем BW
+
+    SYSTEM_DelayMs(1);  // Стабилизация
+}
 
 	// ────────────────────────────────────────────────
 // AUDIO BOOST PATCH (увеличение громкости RX)
@@ -814,7 +824,7 @@ void RADIO_SetModulation(ModulationMode_t modulation)
 
 	BK4819_SetAF(mod);
 	BK4819_SetRegValue(afDacGainRegSpec, 0xF);
-	BK4819_WriteRegister(BK4819_REG_3D, modulation == MODULATION_SSB ? 0 : 0x2AAB);
+	//BK4819_WriteRegister(BK4819_REG_3D, modulation == MODULATION_SSB ? 0 : 0x2AAB);
 	BK4819_SetRegValue(afcDisableRegSpec, modulation != MODULATION_FM);
 }
 

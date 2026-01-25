@@ -732,7 +732,8 @@ static const vertical_dashed_t mr_vlines[] = {
 		GUI_DisplaySmallestDark("POW",  88, 40, false, false);
 		GUI_DisplaySmallestDark("MOD",  110, 40, false, false);
 
-		UI_PrintStringBSmall("TEST", 10, 30, 20, 0);  // обычный вызов
+		UI_PrintStringBSmall("TEST", 10, 30, 2, 0);  // обычный вызов
+		
 	
 	}
 	else
